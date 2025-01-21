@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "fstream": "cpp",
+        "iostream": "cpp",
+        "iosfwd": "cpp",
+        "ostream": "cpp",
+        "string": "cpp",
+        "format": "cpp",
+        "iomanip": "cpp",
+        "vector": "cpp",
+        "array": "cpp",
+        "string_view": "cpp",
+        "initializer_list": "cpp",
+        "span": "cpp"
+    }
+}

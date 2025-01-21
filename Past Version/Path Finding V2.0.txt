@@ -1,0 +1,543 @@
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <utility>
+#include <vector>
+#include <queue>
+#include <algorithm>
+#include <chrono>
+#include <thread>
+using namespace std;
+
+//COLOR DEFINIITION
+#define RESET   "\033[0m"
+#define RED     "\033[31m"
+#define GREEN   "\033[32m"
+#define YELLOW  "\033[33m"
+#define BLUE    "\033[34m"
+#define MAGENTA "\033[35m"
+#define CYAN    "\033[36m"
+#define WHITE   "\033[37m"
+
+//TEXT STYLE
+#define BOLD            "\033[1m"
+#define ITALIC          "\033[3m"
+#define UNDERLINE       "\033[4m"
+#define STRIKETHROUGH   "\033[9m"
+
+//CURSOR MOVEMENT
+#define MOVE_CURSOR(row, col) "\033[" #row ";" #col "H"     // Move the cursor to a specific position (row, col)
+#define CLEAR_SCREEN "\033[2J"                              // Clear the screen
+#define CLEAR_TO_END "\033[0J"                              // Clear from cursor to end of screen
+#define SAVE_CURSOR "\033[s"                                // Save the current cursor position
+#define RESTORE_CURSOR "\033[u"                             // Restore the saved cursor position
+#define HIDE_CURSOR "\033[?25l"                             // Hide the cursor
+#define SHOW_CURSOR "\033[?25h"                             // Show the cursor
+
+//MAP
+const string OriginalMap[10] = {
+"S, , ,X, , , , , , ",
+" ,X, ,X, ,X, , , , ",
+" , , , , , ,X, , , ",
+" , , , , , , , , , ",
+"X,X, ,X, ,X, ,X, , ",
+" , , , , , , , , , ",
+"X,X,X,X,X, , , , , ",
+" , , , , , , , , , ",
+" ,E, , , ,X,X,X,X,X",
+" , , , , , , , , , "
+};
+
+
+
+class map
+{   
+    private:
+    int positionX,positionY;
+    string filename = "map.csv";
+    string DynamicMap[10][10] = {
+        {" "," "," "," "," "," "," "," "," "," "},
+        {" "," "," "," "," "," "," "," "," "," "},
+        {" "," "," "," "," "," "," "," "," "," "},
+        {" "," "," "," "," "," "," "," "," "," "},
+        {" "," "," "," "," "," "," "," "," "," "},
+        {" "," "," "," "," "," "," "," "," "," "},
+        {" "," "," "," "," "," "," "," "," "," "},
+        {" "," "," "," "," "," "," "," "," "," "},
+        {" "," "," "," "," "," "," "," "," "," "},
+        {" "," "," "," "," "," "," "," "," "," "}
+    };
+
+    public:
+    void print(){
+            cout<< ITALIC << "    0 1 2 3 4 5 6 7 8 9" << RESET << endl;
+            cout<<"  ┌─────────────────────┐"<<endl;
+            for(int i=0;i<10;i++){
+                cout<<ITALIC<<i<<RESET<<" │ ";
+                for(int j=0;j<10;j++){
+                    string cell = DynamicMap[i][j];
+                    if(cell=="S"||cell=="E"){
+                        cout << BOLD << GREEN << cell << RESET << RESET << " ";
+                    } else if (cell=="X"){
+                        cout << BOLD << RED << cell << RESET << RESET << " ";
+                    } else if((i==1||i==2||i==12)&& j==0){
+                        cout << cell << " ";
+                    } else {
+                        cout << cell << " ";
+                    }
+                }
+                cout<<"│"<<endl;
+            }
+            cout<<"  └─────────────────────┘"<<endl;
+    }
+
+    void installMap(){
+        ofstream outfile(filename,ios::out);
+        string line;
+        for(int i=0;i<10;i++){
+            if(i<9){
+                outfile << OriginalMap[i] << endl;
+            } else {
+                outfile << OriginalMap[i];
+            }
+        }
+        outfile.close();
+        ifstream infile(filename);
+        string row;
+        if(infile.is_open()){
+            string line;
+            stringstream ss;
+            int lineCount = 0;
+            while(getline(infile,line)){
+                if(lineCount<10){
+                    string cell;
+                    int column = 0;
+                    ss.clear();
+                    ss.str(line);
+                    while(getline(ss,cell,',')){
+                        if(column<10){
+                            DynamicMap[lineCount][column] = cell;
+                            column++;
+                        }
+                    }
+                    lineCount++;
+                }
+            }
+        }
+    }
+
+    void giveCoordinate(string Target){
+        for(int i = 0;i<10;i++){
+            for(int j = 0;j<10;j++){
+                if(DynamicMap[i][j]==Target){
+                    positionX=j;
+                    positionY=i;    
+                    return;
+                }
+            }
+        }
+    }
+
+    bool movingLogic(string direction){
+        if(direction=="Up"){
+            if(DynamicMap[positionY-1][positionX]=="X"){return false;
+            } else {return true;}}
+        else if(direction=="UpperLeft"){
+            if(DynamicMap[positionY-1][positionX-1]=="X"){return false;
+            } else {return true;}}
+        else if(direction=="UpperRight"){
+            if(DynamicMap[positionY-1][positionX+1]=="X"){return false;
+            } else {return true;}}
+        else if(direction=="Left"){
+            if(DynamicMap[positionY][positionX-1]=="X"){return false;
+            } else {return true;}}
+        else if(direction=="Right"){
+            if(DynamicMap[positionY][positionX+1]=="X"){return false;
+            } else {return true;}}
+        else if(direction=="Lower"){
+            if(DynamicMap[positionY+1][positionX]=="X"){return false;
+            } else {return true;}}
+        else if(direction=="LowerLeft"){
+            if(DynamicMap[positionY+1][positionX-1]=="X"){return false;
+            } else {return true;}}
+        else if(direction=="LowerRight"){
+            if(DynamicMap[positionY+1][positionX+1]=="X"){return false;
+            } else {return true;}}
+        else { return false; }
+    }
+    
+    bool withinMatrix(){
+        if(positionX>=0 && positionY>=0 && positionX<10 && positionY<10){
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    string InttoStrForDirection(int directionInt){
+        string direction;
+        switch(directionInt){
+            case 1:
+            direction = "LowerLeft";
+            break;
+            case 2:
+            direction = "Lower";
+            break;
+            case 3:
+            direction = "LowerRight";
+            break;
+            case 4:
+            direction = "Left";
+            break;
+            case 6:
+            direction = "Right";
+            break;
+            case 7:
+            direction = "UpperLeft";
+            break;
+            case 8:
+            direction = "Up";
+            break;
+            case 9:
+            direction = "UpperRight";
+            break;
+            default:
+            direction = "None";
+        }
+        return direction;
+    }
+
+    void control(int directionInt){
+        string direction = InttoStrForDirection(directionInt);
+        giveCoordinate("S");
+        if(direction=="Up"){
+            if(withinMatrix() && movingLogic(direction)){
+                for(int i=0;i<1;i++){
+                    swap(DynamicMap[positionY][positionX],DynamicMap[positionY-1][positionX]);
+                    positionY--;
+                }
+            }
+            print();
+        } else if (direction=="UpperLeft"){
+            if(withinMatrix() && movingLogic(direction)){
+                for(int i=0;i<1;i++){
+                    swap(DynamicMap[positionY][positionX],DynamicMap[positionY-1][positionX-1]);
+                    positionY--;
+                    positionX--;
+                }
+            }
+            print();
+        } else if (direction=="UpperRight"){
+            if(withinMatrix() && movingLogic(direction)){
+                for(int i=0;i<1;i++){
+                    swap(DynamicMap[positionY][positionX],DynamicMap[positionY-1][positionX+1]);
+                    positionY--;
+                    positionX++;
+                }
+            }
+            print();
+        } else if (direction=="Left"){
+            if(withinMatrix() && movingLogic(direction)){
+                for(int i=0;i<1;i++){
+                    swap(DynamicMap[positionY][positionX],DynamicMap[positionY][positionX-1]);
+                    positionX--;
+                }
+            }
+            print();
+        } else if (direction=="Right"){
+            if(withinMatrix() && movingLogic(direction)){
+                for(int i=0;i<1;i++){
+                    swap(DynamicMap[positionY][positionX],DynamicMap[positionY][positionX+1]);
+                    positionX++;
+                }
+            }
+            print();
+        } else if (direction=="Lower"){
+            if(withinMatrix() && movingLogic(direction)){
+                for(int i=0;i<1;i++){
+                    swap(DynamicMap[positionY][positionX],DynamicMap[positionY+1][positionX]);
+                    positionY++;
+                }
+            }
+            print();
+        } else if (direction=="LowerLeft"){
+            if(withinMatrix() && movingLogic(direction)){
+                for(int i=0;i<1;i++){
+                    swap(DynamicMap[positionY][positionX],DynamicMap[positionY+1][positionX-1]);
+                    positionY++;
+                    positionX--;
+                }
+            }
+            print();
+        } else if (direction=="LowerRight"){
+            if(withinMatrix() && movingLogic(direction)){
+                for(int i=0;i<1;i++){
+                    swap(DynamicMap[positionY][positionX],DynamicMap[positionY+1][positionX+1]);
+                    positionY++;
+                    positionX++;
+                }
+            }
+            print();
+        }
+    }
+
+    vector<vector<string>> getDynamicMap() {
+        vector<vector<string>> result(10, vector<string>(10));
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                result[i][j] = DynamicMap[i][j];
+            }
+        }
+        return result;
+    }
+
+};
+
+class algorithm {
+    private:
+    vector<pair<int, int>> directions = {
+        {0, 1}, {1, 0}, {0, -1}, {-1, 0},
+        {-1, -1}, {1, 1}, {-1, 1}, {1, -1}
+    };
+    vector<int> directionCodes = {1, 2, 3, 4, 6, 7, 8, 9};
+    vector<vector<bool>> visited;
+    vector<vector<string>> mapData;
+    pair<int, int> start;
+    pair<int, int> end;
+    int rows = 10;
+    int cols = 10;
+
+    public:
+    algorithm(vector<vector<string>> mapInput) {
+        mapData = mapInput;
+        visited = vector<vector<bool>>(rows, vector<bool>(cols, false));
+        locatePoints();
+    }
+
+    void locatePoints() {
+        for (int i = 0; i < rows; ++i) {
+            for (int j = 0; j < cols; ++j) {
+                if (mapData[i][j] == "S") {
+                    start = {i, j};
+                } else if (mapData[i][j] == "E") {
+                    end = {i, j};
+                }
+            }
+        }
+    }
+
+    bool isValid(int x, int y) {
+        return x >= 0 && x < rows && y >= 0 && y < cols && mapData[x][y] != "X" && !visited[x][y];
+    }
+
+    void resetVisited() {
+        for (auto &row : visited) {
+            fill(row.begin(), row.end(), false);
+        }
+    }
+
+    vector<pair<int, int>> findShortestPath() {
+        queue<pair<int, int>> q;
+        vector<vector<pair<int, int>>> parent(rows, vector<pair<int, int>>(cols, {-1, -1}));
+        visited[start.first][start.second] = true;
+        q.push(start);
+
+        while (!q.empty()) {
+            auto current = q.front();
+            q.pop();
+
+            if (current == end) {
+                vector<pair<int, int>> path;
+                pair<int, int> node = end;
+                while (node != start) {
+                    path.push_back(node);
+                    node = parent[node.first][node.second];
+                }
+                path.push_back(start);
+                reverse(path.begin(), path.end());
+
+                return path;  // Return the path
+            }
+
+            for (auto dir : directions) {
+                int newX = current.first + dir.first;
+                int newY = current.second + dir.second;
+
+                if (isValid(newX, newY)) {
+                    visited[newX][newY] = true;
+                    parent[newX][newY] = current;
+                    q.push({newX, newY});
+                }
+            }
+        }
+
+        cout << "No valid path found." << endl;
+        return {};  // Return an empty path if no valid path is found
+    }
+
+    // This function will map the path into movement codes
+    vector<int> getMovementCodes() {
+        vector<int> movementCodes;
+        vector<pair<int, int>> path = findShortestPath();
+
+        if (path.empty()) {
+            cout << "No path found, so no movement codes." << endl;
+            return movementCodes;
+        }
+
+        for (size_t i = 1; i < path.size(); ++i) {
+            int x1 = path[i - 1].first, y1 = path[i - 1].second;
+            int x2 = path[i].first, y2 = path[i].second;
+
+            // Calculate the movement code for this step
+            if (x2 == x1 && y2 == y1 + 1) {
+                movementCodes.push_back(6); // Right
+            } else if (x2 == x1 && y2 == y1 - 1) {
+                movementCodes.push_back(4); // Left
+            } else if (x2 == x1 - 1 && y2 == y1) {
+                movementCodes.push_back(8); // Up
+            } else if (x2 == x1 + 1 && y2 == y1) {
+                movementCodes.push_back(2); // Down
+            } else if (x2 == x1 - 1 && y2 == y1 - 1) {
+                movementCodes.push_back(7); // Upper Left
+            } else if (x2 == x1 - 1 && y2 == y1 + 1) {
+                movementCodes.push_back(9); // Upper Right
+            } else if (x2 == x1 + 1 && y2 == y1 - 1) {
+                movementCodes.push_back(1); // Lower Left
+            } else if (x2 == x1 + 1 && y2 == y1 + 1) {
+                movementCodes.push_back(3); // Lower Right
+            }
+        }
+
+        return movementCodes;
+    }
+};
+
+/*int main(){
+    map map;
+    int StartInput;
+    int MovementControl;
+    bool ContinueManualMode = true;
+    cout << CLEAR_SCREEN <<MOVE_CURSOR(0,0);
+    cout<<"WHAT CAN BROWN DO FOR YOU?"<<endl;
+    map.print();
+    cout<<"Click 1 to Start (Manual Control)> ";
+    cin>>StartInput;
+
+    if(StartInput==1){
+        map.installMap();
+        cout << CLEAR_SCREEN <<MOVE_CURSOR(1,0);
+        cout<<"WHAT CAN BROWN DO FOR YOU? (MANUAL MODE)"<<endl;
+        map.print();
+        do{
+            cout<<"Enter The Next Movement > ";
+            cin>>MovementControl;
+            if(MovementControl==0){
+                break;
+            } else if(!map.withinMatrix()){
+                break;
+            }
+            cout << CLEAR_SCREEN <<MOVE_CURSOR(0,0);
+            cout<<"WHAT CAN BROWN DO FOR YOU? (MANUAL MODE)"<<endl;
+            map.control(MovementControl);
+        }while(ContinueManualMode);
+    } else {
+        return 0;
+    }
+}*/
+
+/*int main() {
+    // Create the map and algorithm instance
+    map myMap;
+    myMap.installMap();  // Load the map into the algorithm class
+    algorithm algo(myMap.getDynamicMap());  // Create an algorithm instance with the map
+
+    // Get the series of movement codes for the shortest path
+    vector<int> movementCodes = algo.getMovementCodes();
+
+    // Output the movement codes
+    cout << "Movement codes for the shortest path: ";
+    for (int code : movementCodes) {
+        cout << code << " ";
+    }
+    cout << endl;
+
+    // Simulate the movement using the movement codes
+    cout << CLEAR_SCREEN << MOVE_CURSOR(0, 0);
+    myMap.print();  // Print the initial map
+
+    // Loop through the movement codes and input them into the control function
+    for (int code : movementCodes) {
+        myMap.control(code);  // Move based on the code
+        // Add a pause if you want to see the simulation step by step
+        this_thread::sleep_for(chrono::milliseconds(500));  // Sleep for 500 milliseconds (adjust as needed)
+    }
+
+    return 0;
+}*/
+
+int main() {
+    map myMap;
+    int StartInput;
+    int MovementControl;
+    bool ContinueManualMode = true;
+    bool isAutomated = false;  // Variable to track if we are in automated mode (using algorithm)
+
+    cout << CLEAR_SCREEN << MOVE_CURSOR(0, 0);
+    cout << "WHAT CAN BROWN DO FOR YOU?" << endl;
+    myMap.print();  // Print the initial map
+    cout << "Click 1 to Start (Manual Control), 2 for Automated Control (Pathfinding)> ";
+    cin >> StartInput;
+
+    if (StartInput == 1) {
+        myMap.installMap();  // Install the map from the file
+        cout << CLEAR_SCREEN << MOVE_CURSOR(1, 0);
+        cout << "WHAT CAN BROWN DO FOR YOU? (MANUAL MODE)" << endl;
+        myMap.print();  // Print the initial map
+
+        // Manual control loop
+        do {
+            cout << "Enter The Next Movement > ";
+            cin >> MovementControl;
+
+            if (MovementControl == 0) {
+                break;  // Exit if the user enters 0
+            } else if (!myMap.withinMatrix()) {
+                break;  // Exit if out of bounds
+            }
+
+            cout << CLEAR_SCREEN << MOVE_CURSOR(0, 0);
+            cout << "WHAT CAN BROWN DO FOR YOU? (MANUAL MODE)" << endl;
+            myMap.control(MovementControl);  // Perform the movement
+        } while (ContinueManualMode);
+
+    } else if (StartInput == 2) {
+        // Automated pathfinding mode (using the algorithm class)
+        myMap.installMap();  // Install the map from the file
+        algorithm algo(myMap.getDynamicMap());  // Create an algorithm instance with the map
+
+        // Get the series of movement codes for the shortest path
+        vector<int> movementCodes = algo.getMovementCodes();
+
+        cout << CLEAR_SCREEN << MOVE_CURSOR(0, 0);
+        cout << "Automated Pathfinding (using shortest path)" << endl;
+        myMap.print();  // Print the initial map
+
+        // Loop through the movement codes and input them into the control function
+        for (int code : movementCodes) {
+            myMap.control(code);  // Perform the movement
+            cout << CLEAR_SCREEN << MOVE_CURSOR(0, 0);
+            myMap.print();  // Print the updated map
+
+            // Add a pause to see the simulation step by step
+            this_thread::sleep_for(chrono::milliseconds(500));  // Sleep for 500 milliseconds (adjust as needed)
+        }
+
+    } else {
+        return 0;  // Exit if neither option is chosen
+    }
+
+    return 0;
+}
